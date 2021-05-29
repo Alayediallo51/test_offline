@@ -1,54 +1,113 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'database_helper.dart';
 
-void main() {
-  runApp(MyApp());
-}
+void main() => runApp(MyApp());
 
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  Future getData() async {
-    var client = http.Client();
-    try {
-      var uriResponse = await client.get(
-          Uri.parse('https://compta-perso-api.herokuapp.com/api/depenses'));
-      print(uriResponse);
-    } finally {
-      client.close();
-    }
-  }
-
-  @override
-  void initState() {
-    getData();
-    // TODO: implement initState
-    super.initState();
-  }
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'SQFlite Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: Container(
-        color: Colors.white,
-        child: Text('desormais'),
+      debugShowCheckedModeBanner: false,
+      home: MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  // reference to our single class that manages the database
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final dbHelper = DatabaseHelper.instance;
+
+  var tmp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('sqflite'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              child: Text(
+                'insert',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: _insert,
+            ),
+            ElevatedButton(
+              child: Text(
+                'query',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: _query,
+            ),
+            ElevatedButton(
+              child: Text(
+                'update',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: _update,
+            ),
+            ElevatedButton(
+              child: Text(
+                'delete',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: _delete,
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _insert() async {
+    // row to insert
+    Map<String, dynamic> row = {
+      DatabaseHelper.columnName: 'Bob',
+      DatabaseHelper.columnAge: 23
+    };
+    final id = await dbHelper.insert(row);
+    print('inserted row id: $id');
+  }
+
+  void _query() async {
+    final allRows = await dbHelper.queryAllRows();
+    print('query all rows:');
+    allRows.forEach((x) {
+      print(x.runtimeType);
+    });
+    List<Map> result = allRows;
+
+    //print(tmp);
+  }
+
+  void _update() async {
+    // row to update
+    Map<String, dynamic> row = {
+      DatabaseHelper.columnId: 1,
+      DatabaseHelper.columnName: 'Mary',
+      DatabaseHelper.columnAge: 32
+    };
+    final rowsAffected = await dbHelper.update(row);
+    print('updated $rowsAffected row(s)');
+  }
+
+  void _delete() async {
+    // Assuming that the number of rows is the id for the last row.
+    final id = await dbHelper.queryRowCount();
+    final rowsDeleted = await dbHelper.delete(id);
+    print('deleted $rowsDeleted row(s): row $id');
   }
 }
